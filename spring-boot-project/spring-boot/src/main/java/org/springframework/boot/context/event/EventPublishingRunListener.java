@@ -55,6 +55,38 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 		this.application = application;
 		this.args = args;
 		this.initialMulticaster = new SimpleApplicationEventMulticaster();
+		/**
+		 * application.getListeners()获取spring.factories文件中
+		 * org.springframework.context.ApplicationListener的配置类
+		 * 如下为所有listener：
+		 * 1、类org.springframework.boot.ClearCachesApplicationListener
+		 * 		对应事件：ContextRefreshedEvent
+		 * 2、org.springframework.boot.builder.ParentContextCloserApplicationListener
+		 * 		对应事件：ParentContextAvailableEvent
+		 * 3、org.springframework.boot.cloud.CloudFoundryVcapEnvironmentPostProcessor
+		 * 		对应事件：ApplicationPreparedEvent
+		 * 4、org.springframework.boot.context.FileEncodingApplicationListener
+		 * 		对应事件：ApplicationEnvironmentPreparedEvent
+		 * 5、org.springframework.boot.context.config.AnsiOutputApplicationListener
+		 * 		对应事件：ApplicationEnvironmentPreparedEvent
+		 * 6、org.springframework.boot.context.config.ConfigFileApplicationListener
+		 * 		对应事件：ApplicationEnvironmentPreparedEvent
+		 * 				ApplicationPreparedEvent
+		 * 7、org.springframework.boot.context.config.DelegatingApplicationListener
+		 * 		对应事件：ApplicationEnvironmentPreparedEvent
+		 * 				ApplicationEvent
+		 * 8、org.springframework.boot.context.logging.ClasspathLoggingApplicationListener
+		 * 		对应事件：ApplicationEnvironmentPreparedEvent
+		 * 				ApplicationFailedEvent
+		 * 9、org.springframework.boot.context.logging.LoggingApplicationListener
+		 * 		对应事件：ApplicationStartingEvent
+		 * 				ApplicationEnvironmentPreparedEvent
+		 * 				ApplicationPreparedEvent
+		 * 				ContextClosedEvent
+		 * 				ApplicationFailedEvent
+		 * 10、org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+		 * 		对应事件：ApplicationStartingEvent
+		 */
 		for (ApplicationListener<?> listener : application.getListeners()) {
 			this.initialMulticaster.addApplicationListener(listener);
 		}
@@ -67,6 +99,11 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 
 	@Override
 	public void starting() {
+		/**
+		 * ApplicationStartingEvent事件有两个listener，分别为
+		 * 1、org.springframework.boot.context.logging.LoggingApplicationListener
+		 * 2、org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+		 */
 		this.initialMulticaster.multicastEvent(new ApplicationStartingEvent(this.application, this.args));
 	}
 

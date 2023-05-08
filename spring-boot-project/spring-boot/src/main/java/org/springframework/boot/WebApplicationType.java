@@ -44,14 +44,23 @@ public enum WebApplicationType {
 	 * embedded reactive web server.
 	 */
 	REACTIVE;
-
+	/**
+	 * javax.servlet.Servlet是jdoss-servlet-api包下的类
+	 * org.springframework.web.context.ConfigurableWebApplicationContext是spring-web包下的类
+	 */
 	private static final String[] SERVLET_INDICATOR_CLASSES = { "javax.servlet.Servlet",
 			"org.springframework.web.context.ConfigurableWebApplicationContext" };
-
+	/**
+	 * spring-webmvc包下的类
+	 */
 	private static final String WEBMVC_INDICATOR_CLASS = "org.springframework.web.servlet.DispatcherServlet";
-
+	/**
+	 * spring-webflux包下的类
+	 */
 	private static final String WEBFLUX_INDICATOR_CLASS = "org.springframework.web.reactive.DispatcherHandler";
-
+	/**
+	 * jersey-container-servlet-core包下的类
+	 */
 	private static final String JERSEY_INDICATOR_CLASS = "org.glassfish.jersey.servlet.ServletContainer";
 
 	private static final String SERVLET_APPLICATION_CONTEXT_CLASS = "org.springframework.web.context.WebApplicationContext";
@@ -59,10 +68,16 @@ public enum WebApplicationType {
 	private static final String REACTIVE_APPLICATION_CONTEXT_CLASS = "org.springframework.boot.web.reactive.context.ReactiveWebApplicationContext";
 
 	static WebApplicationType deduceFromClasspath() {
+		/**
+		 * 利用反射判断项目只存在webflux的依赖包，而不存在servlet和jersey的依赖包，进而确定容器仅仅是reactive类型
+		 */
 		if (ClassUtils.isPresent(WEBFLUX_INDICATOR_CLASS, null) && !ClassUtils.isPresent(WEBMVC_INDICATOR_CLASS, null)
 				&& !ClassUtils.isPresent(JERSEY_INDICATOR_CLASS, null)) {
 			return WebApplicationType.REACTIVE;
 		}
+		/**
+		 * 利用反射判断项目依赖中不存在servlet和spring-web的依赖，进而确定容器不是web容器
+		 */
 		for (String className : SERVLET_INDICATOR_CLASSES) {
 			if (!ClassUtils.isPresent(className, null)) {
 				return WebApplicationType.NONE;

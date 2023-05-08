@@ -60,9 +60,12 @@ public abstract class LoggingSystem {
 
 	static {
 		Map<String, String> systems = new LinkedHashMap<>();
+		// logback
 		systems.put("ch.qos.logback.core.Appender", "org.springframework.boot.logging.logback.LogbackLoggingSystem");
+		// log4j
 		systems.put("org.apache.logging.log4j.core.impl.Log4jContextFactory",
 				"org.springframework.boot.logging.log4j2.Log4J2LoggingSystem");
+		// java logging
 		systems.put("java.util.logging.LogManager", "org.springframework.boot.logging.java.JavaLoggingSystem");
 		SYSTEMS = Collections.unmodifiableMap(systems);
 	}
@@ -155,6 +158,12 @@ public abstract class LoggingSystem {
 			}
 			return get(classLoader, loggingSystem);
 		}
+		/**
+		 * 按照logback --> log4j --> java logging的顺序判断项目中时候有对应依赖
+		 * 如：	如果项目中依赖logback，则使用logback日志系统
+		 * 		如果项目中没有依赖logback，但是依赖log4j，则使用log4j日志系统
+		 * 		如果项目中既没有logback，又没有log4j，则使用java logging日志系统兜底
+		 */
 		return SYSTEMS.entrySet().stream().filter((entry) -> ClassUtils.isPresent(entry.getKey(), classLoader))
 				.map((entry) -> get(classLoader, entry.getValue())).findFirst()
 				.orElseThrow(() -> new IllegalStateException("No suitable logging system located"));

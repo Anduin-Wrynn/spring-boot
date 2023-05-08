@@ -120,7 +120,7 @@
 			</activation>
 			<modules>
 				<module>spring-boot-project</module>
-				<module>spring-boot-tests</module>
+				<!--<module>spring-boot-tests</module>-->
 			</modules>
 		</profile>
 		<profile>

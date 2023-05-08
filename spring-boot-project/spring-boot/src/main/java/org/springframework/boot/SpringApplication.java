@@ -268,9 +268,27 @@ public class SpringApplication {
 		this.resourceLoader = resourceLoader;
 		Assert.notNull(primarySources, "PrimarySources must not be null");
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		// 判定容器以哪种方式启动
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
+		/**
+		 * 第一步：getSpringFactoriesInstances(ApplicationContextInitializer.class)
+		 * 利用SPI获取spring.factories文件中org.springframework.context.ApplicationContextInitializer接口
+		 * 的配置类
+		 * 第二步：setInitializers
+		 * 为SpringApplication的initializers属性进行赋值
+		 */
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		/**
+		 * 第一步：getSpringFactoriesInstances(ApplicationListener.class)
+		 * 利用SPI获取spring.factories文件中org.springframework.context.ApplicationListener
+		 * 的配置类
+		 * 第二步：setListeners
+		 * 为SpringApplication的listeners属性进行赋值
+		 */
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		/**
+		 * 为SpringApplication的mainApplicationClass复制
+		 */
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
@@ -301,10 +319,23 @@ public class SpringApplication {
 		ConfigurableApplicationContext context = null;
 		Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
 		configureHeadlessProperty();
+		/**
+		 * 根据SPI获取spring.factories文件中org.springframework.boot.SpringApplicationRunListener的所有配置类
+		 */
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+		/**
+		 * 由org.springframework.boot.context.event.EventPublishingRunListener发布ApplicationStartingEvent事件
+		 * ApplicationStartingEvent此事件有以下两个listener处理。
+		 * 	1、org.springframework.boot.context.logging.LoggingApplicationListener
+		 * 		做初始化日志系统之前的准备
+		 * 	2、org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+ 		 */
 		listeners.starting();
 		try {
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			/**
+			 * 准备项目环境
+			 */
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
 			configureIgnoreBeanInfo(environment);
 			Banner printedBanner = printBanner(environment);
@@ -339,9 +370,19 @@ public class SpringApplication {
 	private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
 			ApplicationArguments applicationArguments) {
 		// Create and configure the environment
+		/**
+		 * 根据应用类型初始化environment
+		 * 注意：此处会涉及java多态基础。
+		 */
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
+
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
 		ConfigurationPropertySources.attach(environment);
+		/**
+		 * 由org.springframework.boot.context.event.EventPublishingRunListener发布ApplicationEnvironmentPreparedEvent事件
+		 * ApplicationEnvironmentPreparedEvent此事件有以下两个listener处理。
+		 *  1、
+		 */
 		listeners.environmentPrepared(environment);
 		bindToSpringApplication(environment);
 		if (!this.isCustomEnvironment) {
@@ -355,6 +396,9 @@ public class SpringApplication {
 	private Class<? extends StandardEnvironment> deduceEnvironmentClass() {
 		switch (this.webApplicationType) {
 		case SERVLET:
+			/**
+			 * 逻辑很深
+			 */
 			return StandardServletEnvironment.class;
 		case REACTIVE:
 			return StandardReactiveWebEnvironment.class;
@@ -412,6 +456,9 @@ public class SpringApplication {
 
 	private SpringApplicationRunListeners getRunListeners(String[] args) {
 		Class<?>[] types = new Class<?>[] { SpringApplication.class, String[].class };
+		/**
+		 * 根据SPI获取spring.factories文件中org.springframework.boot.SpringApplicationRunListener的所有配置类
+		 */
 		return new SpringApplicationRunListeners(logger,
 				getSpringFactoriesInstances(SpringApplicationRunListener.class, types, this, args));
 	}
@@ -423,8 +470,11 @@ public class SpringApplication {
 	private <T> Collection<T> getSpringFactoriesInstances(Class<T> type, Class<?>[] parameterTypes, Object... args) {
 		ClassLoader classLoader = getClassLoader();
 		// Use names and ensure unique to protect against duplicates
+		// 获取配置类
 		Set<String> names = new LinkedHashSet<>(SpringFactoriesLoader.loadFactoryNames(type, classLoader));
+		// 实例化所有配置类
 		List<T> instances = createSpringFactoriesInstances(type, parameterTypes, classLoader, args, names);
+		// 排序
 		AnnotationAwareOrderComparator.sort(instances);
 		return instances;
 	}
@@ -454,6 +504,23 @@ public class SpringApplication {
 		}
 		switch (this.webApplicationType) {
 		case SERVLET:
+			/**
+			 * 注意：
+			 * 	StandardServletEnvironment继承StandardEnvironment，
+			 * 	StandardEnvironment继承AbstractEnvironment，
+			 * 	AbstractEnvironment实现ConfigurableEnvironment接口。
+			 *
+			 * 	在初始化StandardServletEnvironment时，会调用所有父类的构造方法。
+			 * 	AbstractEnvironment的构造方法中会调用抽象方法：customizePropertySources
+			 * 	所以在子类的customizePropertySources方法会在初始化时执行。
+			 *
+			 * 	因此：StandardServletEnvironment对象中会有以下几种env属性：
+			 * 		1、servletConfigInitParams(必然)
+			 * 		2、servletContextInitParams(必然)
+			 * 		3、jndiProperties(可选)
+			 * 		4、systemProperties(父类StandardEnvironment)
+			 * 		5、systemEnvironment(父类StandardEnvironment)
+			 */
 			return new StandardServletEnvironment();
 		case REACTIVE:
 			return new StandardReactiveWebEnvironment();
@@ -1211,9 +1278,9 @@ public class SpringApplication {
 	 * @param args the application arguments (usually passed from a Java main method)
 	 * @return the running {@link ApplicationContext}
 	 */
-	public static ConfigurableApplicationContext run(Class<?> primarySource, String... args) {
+	/*public static ConfigurableApplicationContext run(Class<?> primarySource, String... args) {
 		return run(new Class<?>[] { primarySource }, args);
-	}
+	}*/
 
 	/**
 	 * Static helper that can be used to run a {@link SpringApplication} from the
@@ -1238,9 +1305,9 @@ public class SpringApplication {
 	 * @see SpringApplication#run(Class[], String[])
 	 * @see SpringApplication#run(Class, String...)
 	 */
-	public static void main(String[] args) throws Exception {
+	/*public static void main(String[] args) throws Exception {
 		SpringApplication.run(new Class<?>[0], args);
-	}
+	}*/
 
 	/**
 	 * Static helper that can be used to exit a {@link SpringApplication} and obtain a
