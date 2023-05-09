@@ -48,6 +48,13 @@ public class SystemEnvironmentPropertySourceEnvironmentPostProcessor implements 
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+		/**
+		 * 获取Environment中key为systemEnvironment的信息(系统信息)，转换成OriginAwareSystemEnvironmentPropertySource
+		 * 对象，Environment的key不变。
+		 * 猜测：SystemEnvironmentPropertySource对象无法检查某一个配置key是否存在，
+		 * Spring Boot的OriginAwareSystemEnvironmentPropertySource继承了SystemEnvironmentPropertySource
+		 * 同时又实现了OriginLookup接口，OriginLookup接口提供检查某一个配置key是否存在的方法
+		 */
 		String sourceName = StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME;
 		PropertySource<?> propertySource = environment.getPropertySources().get(sourceName);
 		if (propertySource != null) {

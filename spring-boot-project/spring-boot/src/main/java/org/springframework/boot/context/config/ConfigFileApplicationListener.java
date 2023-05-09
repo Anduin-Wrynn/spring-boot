@@ -182,9 +182,35 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 	}
 
 	private void onApplicationEnvironmentPreparedEvent(ApplicationEnvironmentPreparedEvent event) {
+		/**
+		 * 根据SPI获取spring.factories文件中org.springframework.boot.env.EnvironmentPostProcessor的所有配置类
+		 * 1、org.springframework.boot.cloud.CloudFoundryVcapEnvironmentPostProcessor
+		 * 2、org.springframework.boot.env.SpringApplicationJsonEnvironmentPostProcessor
+		 * 3、org.springframework.boot.env.SystemEnvironmentPropertySourceEnvironmentPostProcessor
+		 * 4、org.springframework.boot.reactor.DebugAgentEnvironmentPostProcessor
+		 */
 		List<EnvironmentPostProcessor> postProcessors = loadPostProcessors();
 		postProcessors.add(this);
 		AnnotationAwareOrderComparator.sort(postProcessors);
+		/**
+		 * 重排序后的processor列表为
+		 * 1、org.springframework.boot.env.SystemEnvironmentPropertySourceEnvironmentPostProcessor
+		 *		将Environment中key为"systemEnvironment"的SystemEnvironmentPropertySource对象，
+		 *		转换成OriginAwareSystemEnvironmentPropertySource对象，重新赋值给systemEnvironment。
+		 *		注意：这里转换可能是因为SystemEnvironmentPropertySource为Spring包中的类，不可控，
+		 *			 OriginAwareSystemEnvironmentPropertySource为Spring Boot包的类，可控性高
+		 * 2、org.springframework.boot.env.SpringApplicationJsonEnvironmentPostProcessor
+		 *		将spring.application.json或者SPRING_APPLICATION_JSON两个配置json格式的配置内容
+		 *		配置信息将被设置在Environment的jndiProperties、servletContextInitParams、
+		 *		servletConfigInitParams之前，并且优先级高于systemEnvironment。
+		 *		注意：设置时注意双引号的转义，举例如下
+		 *			 java -jar xxx --SPRING_APPLICATION_JSON={\"xxx\":\"xxx\"}
+		 * 3、org.springframework.boot.cloud.CloudFoundryVcapEnvironmentPostProcessor
+		 *
+		 * 4、org.springframework.boot.context.config.ConfigFileApplicationListener
+		 *
+		 * 5、org.springframework.boot.reactor.DebugAgentEnvironmentPostProcessor
+		 */
 		for (EnvironmentPostProcessor postProcessor : postProcessors) {
 			postProcessor.postProcessEnvironment(event.getEnvironment(), event.getSpringApplication());
 		}

@@ -329,6 +329,7 @@ public class SpringApplication {
 		 * 	1、org.springframework.boot.context.logging.LoggingApplicationListener
 		 * 		做初始化日志系统之前的准备
 		 * 	2、org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+		 * 		TODO 待补充此listener的作用
  		 */
 		listeners.starting();
 		try {
@@ -371,17 +372,39 @@ public class SpringApplication {
 			ApplicationArguments applicationArguments) {
 		// Create and configure the environment
 		/**
-		 * 根据应用类型初始化environment
+		 * 根据应用类型初始化environment，更多的是加载外部环境变量信息
 		 * 注意：此处会涉及java多态基础。
 		 */
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
-
+		/**
+		 * 设置启动应用的环境变量信息，如启动命令行变量
+		 */
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
+		/**
+		 * 将environment的所有配置信息复制给spring boot的SpringConfigurationPropertySources
+		 */
 		ConfigurationPropertySources.attach(environment);
 		/**
 		 * 由org.springframework.boot.context.event.EventPublishingRunListener发布ApplicationEnvironmentPreparedEvent事件
-		 * ApplicationEnvironmentPreparedEvent此事件有以下两个listener处理。
-		 *  1、
+		 * ApplicationEnvironmentPreparedEvent此事件有以下六个listener处理。
+		 *  1、org.springframework.boot.context.FileEncodingApplicationListener
+		 *		检查运行虚拟机平台的编码集(file.encoding)和项目的编码集(application.properties中配置项spring.mandatory-file-encoding)
+		 *		是否一致，如果不一致，服务器启动报错并终止。
+		 *		注意：此listener只检查.java后缀文件的编码
+		 *  2、org.springframework.boot.context.config.AnsiOutputApplicationListener
+		 *		设置ANSI输出，让控制台输出内容有不同颜色
+		 *		解释：ANSI（American National Standards Institute）转义序列可以用来改变文本的颜色、背景色、样式等，
+		 *		以便更好地区分不同的信息
+		 *		注意：Spring Boot默认启用ANSI输出，这样可以使控制台输出的日志信息更加易读
+		 *  3、org.springframework.boot.context.config.ConfigFileApplicationListener
+		 *		所有源配置文件的处理，ConfigFileApplicationListener委托所有EnvironmentPostProcessor的子类进行处理
+		 *  4、org.springframework.boot.context.config.DelegatingApplicationListener
+		 *
+		 *  5、org.springframework.boot.context.logging.ClasspathLoggingApplicationListener
+		 *
+		 *  6、org.springframework.boot.context.logging.LoggingApplicationListener
+		 *
+		 *
 		 */
 		listeners.environmentPrepared(environment);
 		bindToSpringApplication(environment);
@@ -542,10 +565,19 @@ public class SpringApplication {
 	 */
 	protected void configureEnvironment(ConfigurableEnvironment environment, String[] args) {
 		if (this.addConversionService) {
+			/**
+			 * 配置文件SpEl表达式转换
+			 */
 			ConversionService conversionService = ApplicationConversionService.getSharedInstance();
 			environment.setConversionService((ConfigurableConversionService) conversionService);
 		}
+		/**
+		 * 添加应用启动命令行的变量信息，如启动脚本的program args,
+		 */
 		configurePropertySources(environment, args);
+		/**
+		 * 为environment设置profile属性
+		 */
 		configureProfiles(environment, args);
 	}
 

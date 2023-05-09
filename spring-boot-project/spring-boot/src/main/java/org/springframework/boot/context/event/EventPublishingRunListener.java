@@ -109,6 +109,15 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 
 	@Override
 	public void environmentPrepared(ConfigurableEnvironment environment) {
+		/**
+		 * ApplicationEnvironmentPreparedEvent此事件有以下六个listener处理
+		 * 1、org.springframework.boot.context.FileEncodingApplicationListener
+		 * 2、org.springframework.boot.context.config.AnsiOutputApplicationListener
+		 * 3、org.springframework.boot.context.config.ConfigFileApplicationListener
+		 * 4、org.springframework.boot.context.config.DelegatingApplicationListener
+		 * 5、org.springframework.boot.context.logging.ClasspathLoggingApplicationListener
+		 * 6、org.springframework.boot.context.logging.LoggingApplicationListener
+		 */
 		this.initialMulticaster
 				.multicastEvent(new ApplicationEnvironmentPreparedEvent(this.application, this.args, environment));
 	}
