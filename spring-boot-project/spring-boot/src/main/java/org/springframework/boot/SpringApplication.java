@@ -267,10 +267,34 @@ public class SpringApplication {
 		this.resourceLoader = resourceLoader;
 		Assert.notNull(primarySources, "PrimarySources must not be null");
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		/*
+		 根据项目依赖判断容器的启动类型：reactive、web、none
+		 */
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
+		/*
+		 第一步：getSpringFactoriesInstances(BootstrapRegistryInitializer.class)
+		 利用SPI获取spring.factories文件中org.springframework.boot.BootstrapRegistryInitializer接口
+		 的配置类
+		 第二步：将所有的BootstrapRegistryInitializers赋值给bootstrapRegistryInitializers
+		 注意：bootstrapRegistryInitializer为spring boot 2.4.x版本后新增
+		 */
 		this.bootstrapRegistryInitializers = new ArrayList<>(
 				getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
+		/*
+		 第一步：getSpringFactoriesInstances(ApplicationContextInitializer.class)
+		 利用SPI获取spring.factories文件中org.springframework.context.ApplicationContextInitializer接口
+		 的配置类
+		 第二步：setInitializers
+		 为SpringApplication的initializers属性进行赋值
+		 */
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		/*
+		 第一步：getSpringFactoriesInstances(ApplicationListener.class)
+		 利用SPI获取spring.factories文件中org.springframework.context.ApplicationListener
+		 的配置类
+		 第二步：setListeners
+		 为SpringApplication的listeners属性进行赋值
+		 */
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
