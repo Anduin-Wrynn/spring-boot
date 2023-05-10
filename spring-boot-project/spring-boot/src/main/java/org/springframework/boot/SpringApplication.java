@@ -268,10 +268,16 @@ public class SpringApplication {
 		Assert.notNull(primarySources, "PrimarySources must not be null");
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
+		
 		this.bootstrapRegistryInitializers = new ArrayList<>(
 				getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
+		
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		/**
+		 * 为SpringApplication的mainApplicationClass赋值
+		 */
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
@@ -295,13 +301,30 @@ public class SpringApplication {
 	 */
 	public ConfigurableApplicationContext run(String... args) {
 		long startTime = System.nanoTime();
+		/**
+		 * 调用所有bootstrapInitializer的initialize方法，来初始化BootstrapContext
+		 */
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
+		/**
+		 * 根据SPI获取spring.factories文件中org.springframework.boot.SpringApplicationRunListener的所有配置类
+		 */
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+		/**
+		 * 由org.springframework.boot.context.event.EventPublishingRunListener发布ApplicationStartingEvent事件
+		 * ApplicationStartingEvent此事件有以下两个listener处理。
+		 * 	1、org.springframework.boot.context.logging.LoggingApplicationListener
+		 * 		做初始化日志系统之前的准备
+		 * 	2、org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+		 * 		TODO 待补充此listener的作用
+ 		 */
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			/**
+			 * 准备项目环境
+			 */
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 			Banner printedBanner = printBanner(environment);
 			context = createApplicationContext();
@@ -348,9 +371,42 @@ public class SpringApplication {
 	private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
 			DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
 		// Create and configure the environment
+		/**
+		 * 根据应用类型初始化environment，更多的是加载外部环境变量信息
+		 * 注意：此处会涉及java多态基础。
+		 */
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
+		/**
+		 * 设置启动应用的环境变量信息，如启动命令行变量
+		 */
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
+		/**
+		 * 将environment的所有配置信息复制给spring boot的SpringConfigurationPropertySources
+		 */
 		ConfigurationPropertySources.attach(environment);
+		/**
+		 * 由org.springframework.boot.context.event.EventPublishingRunListener发布ApplicationEnvironmentPreparedEvent事件
+		 * ApplicationEnvironmentPreparedEvent此事件有以下六个listener处理。
+		 *  1、org.springframework.boot.context.FileEncodingApplicationListener
+		 *		检查运行虚拟机平台的编码集(file.encoding)和项目的编码集(application.properties中配置项spring.mandatory-file-encoding)
+		 *		是否一致，如果不一致，服务器启动报错并终止。
+		 *		注意：此listener只检查.java后缀文件的编码
+		 *  2、org.springframework.boot.context.config.AnsiOutputApplicationListener
+		 *		设置ANSI输出，让控制台输出内容有不同颜色
+		 *		解释：ANSI（American National Standards Institute）转义序列可以用来改变文本的颜色、背景色、样式等，
+		 *		以便更好地区分不同的信息
+		 *		注意：Spring Boot默认启用ANSI输出，这样可以使控制台输出的日志信息更加易读
+		 *  3、org.springframework.boot.context.config.DelegatingApplicationListener
+		 *
+		 *  4、org.springframework.boot.context.logging.LoggingApplicationListener
+		 * 
+		 *	5、org.springframework.boot.ClearCachesApplicationListener
+		 *
+		 *	6、org.springframework.boot.builder.ParentContextCloserApplicationListener
+		 *	
+		 *	7、org.springframework.boot.env.EnvironmentPostProcessorApplicationListener
+		 *
+		 */
 		listeners.environmentPrepared(bootstrapContext, environment);
 		DefaultPropertiesPropertySource.moveToEnd(environment);
 		Assert.state(!environment.containsProperty("spring.main.environment-prefix"),
