@@ -416,7 +416,7 @@ public class SpringApplication {
 		 *		以便更好地区分不同的信息
 		 *		注意：Spring Boot默认启用ANSI输出，这样可以使控制台输出的日志信息更加易读
 		 *  3、org.springframework.boot.context.config.DelegatingApplicationListener
-		 *
+		 *		测试提交注释
 		 *  4、org.springframework.boot.context.logging.LoggingApplicationListener
 		 * 
 		 *	5、org.springframework.boot.ClearCachesApplicationListener
