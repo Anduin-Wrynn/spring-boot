@@ -268,37 +268,33 @@ public class SpringApplication {
 		Assert.notNull(primarySources, "PrimarySources must not be null");
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
 		/*
-		 根据项目依赖判断容器的启动类型：reactive、web、none
+		 * 根据项目依赖判断容器的启动类型：reactive、web、none
 		 */
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
-		
 		/*
-		 第一步：getSpringFactoriesInstances(BootstrapRegistryInitializer.class)
-		 利用SPI获取spring.factories文件中org.springframework.boot.BootstrapRegistryInitializer接口
-		 的配置类
-		 第二步：将所有的BootstrapRegistryInitializers赋值给bootstrapRegistryInitializers
-		 注意：bootstrapRegistryInitializer为spring boot 2.4.x版本后新增
+		 * 第一步：getSpringFactoriesInstances(BootstrapRegistryInitializer.class)
+		 * 利用SPI获取spring.factories文件中org.springframework.boot.BootstrapRegistryInitializer接口的配置类
+		 * 第二步：将所有的BootstrapRegistryInitializers赋值给bootstrapRegistryInitializers
+		 * 注意：bootstrapRegistryInitializer为spring boot 2.4.x版本后新增
 		 */
 		this.bootstrapRegistryInitializers = new ArrayList<>(
 				getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
 		/*
-		 第一步：getSpringFactoriesInstances(ApplicationContextInitializer.class)
-		 利用SPI获取spring.factories文件中org.springframework.context.ApplicationContextInitializer接口
-		 的配置类
-		 第二步：setInitializers
-		 为SpringApplication的initializers属性进行赋值
+		 * 第一步：getSpringFactoriesInstances(ApplicationContextInitializer.class)
+		 * 利用SPI获取spring.factories文件中org.springframework.context.ApplicationContextInitializer接口的配置类
+		 * 第二步：setInitializers 
+		 * 为SpringApplication的initializers属性进行赋值
 		 */
 		
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
 		/*
-		 第一步：getSpringFactoriesInstances(ApplicationListener.class)
-		 利用SPI获取spring.factories文件中org.springframework.context.ApplicationListener
-		 的配置类
-		 第二步：setListeners
-		 为SpringApplication的listeners属性进行赋值
+		 * 第一步：getSpringFactoriesInstances(ApplicationListener.class)
+		 * 利用SPI获取spring.factories文件中org.springframework.context.ApplicationListener的配置类
+		 * 第二步：setListeners
+		 * 为SpringApplication的listeners属性进行赋值
 		 */
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
-		/**
+		/*
 		 * 为SpringApplication的mainApplicationClass赋值
 		 */
 		this.mainApplicationClass = deduceMainApplicationClass();
@@ -324,17 +320,17 @@ public class SpringApplication {
 	 */
 	public ConfigurableApplicationContext run(String... args) {
 		long startTime = System.nanoTime();
-		/**
+		/*
 		 * 调用所有bootstrapInitializer的initialize方法，来初始化BootstrapContext
 		 */
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
-		/**
+		/*
 		 * 根据SPI获取spring.factories文件中org.springframework.boot.SpringApplicationRunListener的所有配置类
 		 */
 		SpringApplicationRunListeners listeners = getRunListeners(args);
-		/**
+		/*
 		 * 由org.springframework.boot.context.event.EventPublishingRunListener发布ApplicationStartingEvent事件
 		 * ApplicationStartingEvent此事件有以下两个listener处理。
 		 * 	1、org.springframework.boot.context.logging.LoggingApplicationListener
@@ -345,7 +341,7 @@ public class SpringApplication {
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
-			/**
+			/*
 			 * 准备项目环境
 			 */
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
@@ -394,20 +390,20 @@ public class SpringApplication {
 	private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
 			DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
 		// Create and configure the environment
-		/**
+		/*
 		 * 根据应用类型初始化environment，更多的是加载外部环境变量信息
 		 * 注意：此处会涉及java多态基础。
 		 */
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
-		/**
+		/*
 		 * 设置启动应用的环境变量信息，如启动命令行变量
 		 */
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
-		/**
+		/*
 		 * 将environment的所有配置信息复制给spring boot的SpringConfigurationPropertySources
 		 */
 		ConfigurationPropertySources.attach(environment);
-		/**
+		/*
 		 * 由org.springframework.boot.context.event.EventPublishingRunListener发布ApplicationEnvironmentPreparedEvent事件
 		 * ApplicationEnvironmentPreparedEvent此事件有以下六个listener处理。
 		 *  1、org.springframework.boot.context.FileEncodingApplicationListener

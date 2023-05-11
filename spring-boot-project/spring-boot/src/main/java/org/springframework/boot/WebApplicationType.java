@@ -59,16 +59,16 @@ public enum WebApplicationType {
 
 	static WebApplicationType deduceFromClasspath() {
 		/*
-		 利用反射判断项目依赖中只存在webflux的依赖包，而不存在servlet和jersey的依赖包，
-		 进而确定容器为reactive类型
+		 * 利用反射判断项目依赖中只存在webflux的依赖包，而不存在servlet和jersey的依赖包，
+		 * 进而确定容器为reactive类型
 		 */
 		if (ClassUtils.isPresent(WEBFLUX_INDICATOR_CLASS, null) && !ClassUtils.isPresent(WEBMVC_INDICATOR_CLASS, null)
 				&& !ClassUtils.isPresent(JERSEY_INDICATOR_CLASS, null)) {
 			return WebApplicationType.REACTIVE;
 		}
 		/*
-		 利用反射判断项目中不存在servlet或者spring-web其中一个依赖，
-		 确定容器不属于web服务
+		 * 利用反射判断项目中不存在servlet或者spring-web其中一个依赖，
+		 * 确定容器不属于web服务
 		 */
 		for (String className : SERVLET_INDICATOR_CLASSES) {
 			if (!ClassUtils.isPresent(className, null)) {
