@@ -1,5 +1,7 @@
 pluginManagement {
 	repositories {
+        maven{ url'https://maven.aliyun.com/repository/public'}
+        maven{ url'https://maven.aliyun.com/repository/jcenter'}
 		mavenCentral()
 		gradlePluginPortal()
 		if (version.endsWith('-SNAPSHOT')) {
