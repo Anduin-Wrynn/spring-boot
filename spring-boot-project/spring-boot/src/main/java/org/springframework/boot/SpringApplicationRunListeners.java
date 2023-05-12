@@ -51,6 +51,10 @@ class SpringApplicationRunListeners {
 	}
 
 	void starting(ConfigurableBootstrapContext bootstrapContext, Class<?> mainApplicationClass) {
+		/*
+		 * 在DefaultApplicationStartup中记录spring.boot.application.starting
+		 * 表示容器进行这一步
+		 */
 		doWithListeners("spring.boot.application.starting", (listener) -> listener.starting(bootstrapContext),
 				(step) -> {
 					if (mainApplicationClass != null) {

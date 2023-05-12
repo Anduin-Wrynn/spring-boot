@@ -39,6 +39,23 @@ class ServletWebServerApplicationContextFactory implements ApplicationContextFac
 
 	@Override
 	public ConfigurableEnvironment createEnvironment(WebApplicationType webApplicationType) {
+		/*
+		 * 注意：此处涉及java多态的构造过程
+		 * StandardServletEnvironment继承StandardEnvironment，
+		 * StandardEnvironment继承AbstractEnvironment，
+		 * AbstractEnvironment实现ConfigurableEnvironment接口。
+		 * 
+		 * 在初始化StandardServletEnvironment时，会调用所有父类的构造方法。
+		 * AbstractEnvironment的构造方法中会调用抽象方法：customizePropertySources
+		 * 所以在子类的customizePropertySources方法会在初始化时执行。
+		 *
+		 * 因此：StandardServletEnvironment对象中会有以下几种env属性：
+		 * 	1、servletConfigInitParams(必然)
+		 * 	2、servletContextInitParams(必然)
+		 * 	3、jndiProperties(可选)
+		 * 	4、systemProperties(父类StandardEnvironment)
+		 * 	5、systemEnvironment(父类StandardEnvironment)
+		 */
 		return (webApplicationType != WebApplicationType.SERVLET) ? null : new ApplicationServletEnvironment();
 	}
 

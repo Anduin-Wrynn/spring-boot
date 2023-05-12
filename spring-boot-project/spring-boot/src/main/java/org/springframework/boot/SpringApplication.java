@@ -331,12 +331,8 @@ public class SpringApplication {
 		 */
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 		/*
-		 * 由org.springframework.boot.context.event.EventPublishingRunListener发布ApplicationStartingEvent事件
-		 * ApplicationStartingEvent此事件有以下两个listener处理。
-		 * 	1、org.springframework.boot.context.logging.LoggingApplicationListener
-		 * 		做初始化日志系统之前的准备
-		 * 	2、org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
-		 * 		TODO 待补充此listener的作用
+		 * 由StartupStep来记录应用启动到spring.boot.application.starting步骤
+		 * 但是并没有处理逻辑
  		 */
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
@@ -416,7 +412,7 @@ public class SpringApplication {
 		 *		以便更好地区分不同的信息
 		 *		注意：Spring Boot默认启用ANSI输出，这样可以使控制台输出的日志信息更加易读
 		 *  3、org.springframework.boot.context.config.DelegatingApplicationListener
-		 *		测试提交注释
+		 *		
 		 *  4、org.springframework.boot.context.logging.LoggingApplicationListener
 		 * 
 		 *	5、org.springframework.boot.ClearCachesApplicationListener
@@ -517,8 +513,16 @@ public class SpringApplication {
 	private SpringApplicationRunListeners getRunListeners(String[] args) {
 		ArgumentResolver argumentResolver = ArgumentResolver.of(SpringApplication.class, this);
 		argumentResolver = argumentResolver.and(String[].class, args);
+		/*
+		 * 利用SPI获取org.springframework.boot.SpringApplicationRunListener的所有实现
+		 * 目前只有org.springframework.boot.context.event.EventPublishingRunListener一个
+		 */
 		List<SpringApplicationRunListener> listeners = getSpringFactoriesInstances(SpringApplicationRunListener.class,
 				argumentResolver);
+		/*
+		 * 使用ThreadLocal存储应用启动的hook钩子，然后在将hook追加到EventPublishingRunListener之后，
+		 * 然后一并处理
+		 */
 		SpringApplicationHook hook = applicationHook.get();
 		SpringApplicationRunListener hookListener = (hook != null) ? hook.getRunListener(this) : null;
 		if (hookListener != null) {
@@ -540,6 +544,10 @@ public class SpringApplication {
 		if (this.environment != null) {
 			return this.environment;
 		}
+		/*
+		 * 由ApplicationContextFactory工厂根据应用启动的类型来创建Environment
+		 * 默认工厂为DefaultApplicationContextFactory
+		 */
 		ConfigurableEnvironment environment = this.applicationContextFactory.createEnvironment(this.webApplicationType);
 		if (environment == null && this.applicationContextFactory != ApplicationContextFactory.DEFAULT) {
 			environment = ApplicationContextFactory.DEFAULT.createEnvironment(this.webApplicationType);
@@ -559,10 +567,19 @@ public class SpringApplication {
 	 * @see #configurePropertySources(ConfigurableEnvironment, String[])
 	 */
 	protected void configureEnvironment(ConfigurableEnvironment environment, String[] args) {
+		/*
+		 * 配置文件SpEl表达式转换
+		 */
 		if (this.addConversionService) {
 			environment.setConversionService(new ApplicationConversionService());
 		}
+		/*
+		 * 添加应用启动命令行的变量信息，如启动脚本的program args,
+		 */
 		configurePropertySources(environment, args);
+		/*
+		 * 为environment设置profile属性
+		 */
 		configureProfiles(environment, args);
 	}
 

@@ -39,6 +39,9 @@ class ReactiveWebServerApplicationContextFactory implements ApplicationContextFa
 
 	@Override
 	public ConfigurableEnvironment createEnvironment(WebApplicationType webApplicationType) {
+		/*
+		 * TODO 暂时不涉及，后面再补充注释
+		 */
 		return (webApplicationType != WebApplicationType.REACTIVE) ? null : new ApplicationReactiveWebEnvironment();
 	}
 

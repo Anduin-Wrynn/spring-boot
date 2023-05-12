@@ -41,6 +41,9 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
 
 	@Override
 	public ConfigurableEnvironment createEnvironment(WebApplicationType webApplicationType) {
+		/*
+		 * 根据应用类型，调用对应实现类的createEnvironment方法
+		 */
 		return getFromSpringFactories(webApplicationType, ApplicationContextFactory::createEnvironment, null);
 	}
 
@@ -65,8 +68,22 @@ class DefaultApplicationContextFactory implements ApplicationContextFactory {
 
 	private <T> T getFromSpringFactories(WebApplicationType webApplicationType,
 			BiFunction<ApplicationContextFactory, WebApplicationType, T> action, Supplier<T> defaultResult) {
+		/*
+		 * 获取spring.factories文件中org.springframework.boot.ApplicationContextFactory的所有实现
+		 * 1、org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContextFactory
+		 * 		
+		 * 2、org.springframework.boot.web.servlet.context.ServletWebServerApplicationContextFactory
+		 */
 		for (ApplicationContextFactory candidate : SpringFactoriesLoader.loadFactories(ApplicationContextFactory.class,
 				getClass().getClassLoader())) {
+			/*
+			 * 根据应用启动类型，调用ReactiveWebServerApplicationContextFactory或者
+			 * ServletWebServerApplicationContextFactory对应的具体action方法，
+			 * 由方法的调用方传递推来
+			 * 1、在createEnvironment时，传递的action为createEnvironment，则会调用factory的createEnvironment方法
+			 * 2、在create是，传递的action为create，则会调用factory的create方法
+			 * 3、在getEnvironmentType时，传递的action为getEnvironmentType，则会调用getEnvironmentType方法
+			 */
 			T result = action.apply(candidate, webApplicationType);
 			if (result != null) {
 				return result;
